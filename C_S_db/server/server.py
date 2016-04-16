@@ -1,6 +1,26 @@
 import socket
 import psycopg2
-import sys
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
+
+private = RSA.generate(2048)
+f = open('../private.der','wb')
+f.write(private.exportKey('PEM'))
+f.close()
+
+
+
+public = private.publickey()
+print(public)
+f = open('../public.der','wb')
+f.write(public.exportKey('PEM'))
+f.close()
+
+
+
+
+
+
 
 con = None
 serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -16,19 +36,31 @@ while True:
 
     print("Got a connection from %s" % str(addr))
     select=clientsocket.recv(1024)
+
+    keya = RSA.importKey(open('../private.der').read())
+    cipher = PKCS1_OAEP.new(keya)
+    message = cipher.decrypt(select)
+    print(message.decode('utf-8'))
+
+
     print (select)
 
     try:
-      con = psycopg2.connect(database='ctock', user='postgres' , password="1311")
+      con = psycopg2.connect(database='hospi', user='postgres' , password="1311")
       cur = con.cursor()
-      cur.execute(select)
-      rows = cur.fetchall()
-      print (rows)
-      clientsocket.send(str(rows[0][0]))
+      #cur.execute(select)
 
-    except psycopg2.DatabaseError, e:
-        clientsocket.send( 'Error %s' % e)
-      #sys.exit(1)
+
+
+      key = RSA.importKey(open('../public.der').read())
+      cipher = PKCS1_OAEP.new(key)
+      ciphertext = cipher.encrypt(select)
+
+      clientsocket.send(ciphertext)
+
+    except psycopg2.DatabaseError as e:
+        clientsocket.send( e)
+
     finally:
       if con:
         con.close()
