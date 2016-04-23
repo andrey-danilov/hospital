@@ -1,7 +1,24 @@
 import socket
+from imp import reload
 from tkinter import *
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
+
+def str_to_list(in_str):
+    current_tuple = []
+    word = ''
+    result = list()
+    for ch in in_str:
+        if ch == '_':
+            ch = ''
+            current_tuple.append(word)
+            word = ''
+        if ch == '^':
+            ch = ''
+            result.append(tuple(current_tuple))
+            current_tuple = []
+        word += ch
+    return result
 
 def leftclick(event):
     name = None
@@ -12,7 +29,7 @@ def leftclick(event):
     s.connect((host, port))
     name = listbox1.get("active")
 
-    ''''''
+
     select =("SELECT name FROM public.people WHERE age = 19 ")
     print (select)
     key = RSA.importKey(open('../public.der').read())
@@ -21,21 +38,16 @@ def leftclick(event):
     print("select is " )
     print(select)
     s.send(select)
-    '''создание запроса
-    шыфровка
-    отправка на серв'''
-    ''''''
+
     names = s.recv(1024)
     print(names)
     keya = RSA.importKey(open('../private.der').read())
     cipher = PKCS1_OAEP.new(keya)
-    message = cipher.decrypt(names).decode('utf-8')
-    print(message)
-    '''слушанье серва
-    пазшыфровка
-    принт'''
+    message = str_to_list(cipher.decrypt(names).decode('utf-8'))
+    print(message[0][0])
+
     s.close()
-    text1.insert(1.0, message)
+    text1.insert(1.0, "ваыа")
     name = None
     names=None
 
